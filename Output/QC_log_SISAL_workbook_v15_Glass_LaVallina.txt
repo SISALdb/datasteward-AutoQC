@@ -1,0 +1,9 @@
+Informative: Site metadata tab: This site is at Lat: 43.410000 deg and Lon: -4.806667 deg. Ensure that these have been properly converted to decimal degrees and are correct
+Informative: Sample data tab: The total length of Entity Glas is less than 100mm. This is either a very small speleothem or the depths are in cm.
+Informative: Sample data tab: trace element measurement/precision mismatch in: Sr_Ca_precision without Sr_Ca_measurement; Mg_Ca_precision without Mg_Ca_measurement
+Informative: Sample data tab: Entity Glas — depth direction inferred as from top (age increases with depth).
+Informative: There is a total of 1 "unknown" in 1 entities in this workbook: 1 in the entity table;  Please ensure that the information is truly inaccessible before choosing "unknown".
+0 warning/s were detected
+QC checks passed
+Workbook copied to: /Users/lendres/Documents/ResearchHome/00_Researchtopics/AB_SISAL/SISAL-Neo cont./Auto-QC cont./datasteward-AutoQC/Output/QC_passed_SISAL_workbook_v15_Glass_LaVallina.xlsx
+Site map saved to: /Users/lendres/Documents/ResearchHome/00_Researchtopics/AB_SISAL/SISAL-Neo cont./Auto-QC cont./datasteward-AutoQC/Output/map_SISAL_workbook_v15_Glass_LaVallina.png

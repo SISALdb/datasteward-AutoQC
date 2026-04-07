@@ -1,0 +1,154 @@
+CHANGELOG — wb_check_v12_compatible.py
+======================================
+
+2026-04-07 (E. Pestalozzi, L. Endres — merge of wb_check_v12_compatible.py and wb_check_istvan.py)
+---------------------------------------------------------------------------------------------------
+
+INVOCATION
+  - Script is now CLI-driven: run as
+      python wb_check_v12_compatible.py <path/> <filename.xlsx>
+    Previously the path and filename were hardcoded (os.chdir + input_file = '...').
+  - output_file variable defined as <path>/QC_passed_<filename.xlsx> for future use.
+  - openpyxl UserWarning suppression moved to global scope (was inside a context manager).
+  - Sheet reads are now at top level; the with warnings.catch_warnings(): wrapper removed.
+
+FILE HANDLING (Section 9)
+  - On pass, script now prints 'QC checks passed' instead of calling shutil.move().
+    File moving can be re-enabled manually if needed.
+
+NEW FUNCTION
+  - check_independent_dependent_col_silent(): like check_independent_dependent_col()
+    but returns a violation count without printing. Used for informative-level
+    trace element warnings. (Ported from wb_check_istvan.py.)
+
+COLUMN SCHEMA (Section 3)
+  - Target workbook version updated to v15 (was v14 in wb_check_istvan.py).
+  - modern_reference removed from date_col, lam_col, sample_col — column was
+    dropped from all v15 sheets.
+  - depth_ref removed from entity_col — column was dropped from v15 Entity metadata.
+  - contact_orcid added to entity_col (present in v15, absent in wb_check_istvan.py).
+  - Sr_Ca_measurement added to sample_col (was missing from wb_check_istvan.py).
+  - Error messages corrected: each table now reports its own name (was copy-paste
+    bug in wb_check_istvan.py where all tables reported 'Entity metadata').
+
+SAMPLE DATA SECTION (Section 7.iii)
+  Mineralogy dropdown (7.iii.b):
+  - 'mixed' updated to 'mixed (add note to notes sheet)' throughout.
+
+  Trace element checks (7.iii.b):
+  - samplecolumnnameslist extended to include all 6 trace element measurements:
+    Sr_Ca_measurement, Mg_Ca_measurement, Ba_Ca_measurement, U_Ca_measurement,
+    P_Ca_measurement, Sr_isotopes_measurement.
+  - samplecolumnnameslist2 extended to include all 6 trace element precisions:
+    Sr_Ca_precision, Mg_Ca_precision, Ba_Ca_precision, U_Ca_precision,
+    P_Ca_precision, Sr_isotopes_precision.
+  - Added check_independent_dependent_col_silent() calls for all 12 trace element
+    measurement/precision pairs; summarised as a single informative message.
+
+  iso_std checks removed (7.iii.b):
+  - iso_std is not a column in the v15 Sample data sheet (it is in Entity metadata).
+    The check_independent_dependent_col and check_isotope_checks calls on iso_std
+    in the sample table have been removed to prevent KeyError.
+
+  modern_reference checks removed:
+  - Entire block checking modern_reference in the 'excluding hiatuses + no age model'
+    subsection removed (7.iii.d).
+  - CE/BCE → BP(1950) conversion on sample_tb_rm_hiatus_agemodel removed.
+  - check_yearofchemistry_crosstable call on sample table removed.
+  - References to modern_reference in the 'no age model' informative messages removed.
+
+  Interp_age range check simplified (7.iii.d):
+  - No longer conditional on modern_reference being valid; now runs whenever
+    interp_age checks pass.
+
+  age_model_type dropdown (7.iii.d):
+  - Added 'mixed (add note to notes sheet)'.
+  - 'other' updated to 'other (add note to notes sheet)'.
+  - Removed 'combination of methods' (not in v15 dropdown).
+
+  ann_lam_check dropdown (7.iii.d):
+  - 'other' updated to 'other (add note to notes sheet)'.
+
+  Per-entity depth ordering check (7.iii.c.5):
+  - depth_ref is no longer in v15 Entity metadata. Replaced entity_tb lookup with
+    automatic direction detection: sorts by depth ascending, takes mean of
+    np.diff(interp_age) to determine whether record is from top (mean > 0) or
+    from base (mean < 0). Skips ordering checks if direction is ambiguous.
+  - Defensive check added: skips entity if name not found in entity_tb.
+  - CE/BCE conversion on per-entity sample subset removed (no modern_reference).
+
+  check_possible_hiatuses() function:
+  - Added column-existence guard before accessing modern_reference column, so
+    the function works correctly for both v14 and v15 workbooks.
+
+DATING SECTION (Section 7.iii.d)
+  hiatusgaps_columns calls:
+  - modern_reference removed from required-columns lists for Event; actively
+    forming, Event; start/end of laminations.
+  - 'other' updated to 'other (add note to notes sheet)'.
+
+  Positive-numbers loop:
+  - Replaced iteration over the date_col set (unpredictable order, included
+    columns not suited for positivity checks) with an explicit list
+    datingcolumnnameslist2 (ported from wb_check_istvan.py).
+
+  modern_reference removed:
+  - Stale comment block about checking modern_reference with corr_age removed.
+  - 'modern_reference' removed from the completeness loop over date_used != 'no'
+    rows (previously triggered false positives in v15).
+
+  Dropdown updates:
+  - calib_used: 'other' → 'other (add note to notes sheet)'.
+  - material_dated: 'other' → 'other (add note to notes sheet)';
+    'mixed (add note to notes sheet)' added.
+  - C14 calib_used: 'other' → 'other (add note to notes sheet)'.
+  - decay_constant: 'other' → 'other (add note to notes sheet)'.
+
+  Event; actively forming check (7.iii.c.6):
+  - depth_ref lookup from entity_tb removed (column not in v15).
+    The depth_dating == 0 check is therefore skipped.
+  - modern_reference-based age conversion removed.
+  - Simplified to: warn if corr_age > 0 (older than 1950 BP) for an actively
+    growing event.
+
+LAMINA AGE VS DEPTH SECTION (Section 7.iii.e)
+  - modern_reference check block removed (column not in v15 Lamina table).
+  - Age-range check (check_numbers_in_range) now runs unconditionally when
+    lam_age is present (no CE/BCE conversion without modern_reference).
+
+LAMINATION INTEGRITY CHECK (Section 8 / post-reference checks)
+  - depth_ref lookup from entity_tb removed. Lamination events now sorted
+    ascending by depth_dating (from-top assumed, the most common case).
+  - All modern_reference-based age-reasonableness checks on the youngest
+    'Event; end of laminations' replaced with a direct corr_age <= 0 check.
+  - The separate from-base branch (which was identical logic) removed.
+
+----------------------------------------------------------------------
+
+2025-03 (E. Pestalozzi, L. Endres)
+-----------------------------------
+  - Updated column names for v15 in version check and set column data types.
+  - Catch warnings generated by data validation in Excel (dropdown lists).
+  - Check if exactly one latitude and longitude for site data.
+  - Updated dropdown lists up until section 7.ii.a (Entity metadata).
+  - Restructuring: Site spreadsheet checks fully moved to dedicated subsection.
+
+2022-05-20 (I. Hatvani — wb_check_istvan.py branch)
+----------------------------------------------------
+  - Updated site_col and sample_col for workbook v14.
+  - Moved geology and rock_age checks from site to entity level.
+  - Added vegetation_type, land_use, cover_type checks at entity level.
+  - Updated 'other'/'mixed' options to 'other (add note to notes sheet)'/
+    'mixed (add note to notes sheet)'.
+  - Suppress openpyxl UserWarnings globally.
+  - check_drip_type: must be empty for composites, non-empty for non-composites.
+
+2019-09-13 (K. Atsawawaranunt)
+-------------------------------
+  - Renamed from wb_checkv12.py to wb_check.py.
+  - Dating table: calib_used options 'unknown' and 'other' added.
+  - depth_dating must be 0 for Event; actively growing when depth_ref = from top.
+  - entity_status_notes cast to string at startup.
+  - Python 3 compatibility (tested on 2.7.15+ and 3.6.8).
+
+(Earlier entries: see file header docstring)
