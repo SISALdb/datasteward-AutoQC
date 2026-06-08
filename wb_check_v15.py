@@ -654,6 +654,12 @@ def check_notminmax_age(table, age, uncert1, uncert2, table_name, entity_name = 
         table = table.loc[pd.notnull(table[uncert1]),:] # only uncert1 is required as there are other checks for the coexistence of both uncert1 and uncert2
     else:
         pass
+    # coerce to numeric so non-numeric age values (already flagged by check_numbers) are skipped here
+    table = table.copy()
+    table[age] = pd.to_numeric(table[age], errors='coerce')
+    table = table.loc[pd.notnull(table[age]), :]
+    if table.empty:
+        return 0
     list_append = list(table.index[((table[age] <= table[uncert1]) & (table[age] >= table[uncert2])) | ((table[age] <= table[uncert2]) & (table[age] >= table[uncert1]))] + 3)
     if (len(list_append) > 1):
         if entity_name != '':
