@@ -1,20 +1,24 @@
 SISAL v15 Workbook QC — Data Steward Instructions
 ===================================================
-Last updated: April 2026
+Last updated: June 2026
 
 
 OVERVIEW
 --------
-When a contributor sends you a filled SISAL v15 workbook, run two checks:
+When a contributor sends you a filled SISAL v15 workbook, run two steps:
 
   Step 1 — Python QC script (wb_check_v15.py)
-           Validates the workbook content and structure. Produces a QC log,
-           a site map, and — if no errors are found — a QC-passed copy of
-           the workbook, all saved to the Output/ folder.
+           Validates the workbook content and structure, including a U-Th
+           age credibility check (Section 8, added June 2026). Produces a
+           QC log, a site map, and — if no errors are found — a QC-passed
+           copy of the workbook, all saved to the Output/ folder.
 
   Step 2 — R plotting script (run_plots.R)
            Generates a PDF per entity with age model, possible hiatus, and
            proxy time-series plots. Saved to the Output/ folder.
+
+Note: the Julia U-Th script (sisal2_read.jl) is no longer needed as a
+separate step. Its checks are now integrated into Step 1 (Section 8).
 
 Both scripts must be run from the datasteward-AutoQC/ folder (the repo root).
 
@@ -33,9 +37,9 @@ datasteward-AutoQC/
 ONE-TIME SETUP
 --------------
 Python packages required (install once with pip or conda):
-  pandas, numpy, openpyxl, xlrd, matplotlib, cartopy, shapely
+  pandas, numpy, openpyxl, xlrd, matplotlib, cartopy, shapely, scipy
 
-  pip install pandas numpy openpyxl xlrd matplotlib cartopy shapely
+  pip install pandas numpy openpyxl xlrd matplotlib cartopy shapely scipy
 
 R packages required (install once in R or RStudio):
   openxlsx, ggplot2
@@ -140,3 +144,22 @@ TROUBLESHOOTING
 Python warnings about openpyxl or cartopy appearing in the terminal
   -> These are suppressed automatically. If they still appear, run as:
      python -W ignore wb_check_v15.py <filename.xlsx>
+
+"Warning (U-Th check, EntityName): 234U/238U activity ratio <= 0"
+  -> The contributor has submitted d234U instead of the 234U/238U activity
+     ratio. Ask them to convert: activity ratio = 1 + d234U / 1000.
+
+"Warning (U-Th check, EntityName): ini_230Th/232Th mean < 0.01"
+  -> The initial 230Th/232Th value appears to be an atomic ratio (e.g. the
+     default 4.4 × 10⁻⁶) instead of the required activity ratio (~0.818
+     for the bulk Earth assumption). Ask contributor to check the workbook
+     instructions for the correct value.
+
+"Warning (U-Th check, EntityName): Recalculated ages deviate X% from reported"
+  -> The isotope data submitted does not reproduce the reported ages when
+     recalculated independently. Most common causes:
+       1. d234U submitted instead of 234U/238U activity ratio
+       2. ini_230Th/232Th given as atomic ratio instead of activity ratio
+       3. Wrong half-lives used by the original lab software
+     Ask the contributor to verify their isotope inputs against the
+     workbook instructions.

@@ -1,5 +1,50 @@
-CHANGELOG — wb_check_v12_compatible.py
-======================================
+CHANGELOG — wb_check_v15.py
+============================
+
+2026-06-08 (L. Endres — branch: feature/uth-python-checker)
+------------------------------------------------------------
+
+NEW: Section 8 — U-Th age credibility check
+  - Ported from sisal2_read.jl (J. Fohlmeister, QC_SISALv2_dating_metadata).
+    The Julia script is no longer needed as a separate pipeline step.
+  - Operates directly on the Dating information sheet already loaded in
+    memory (dating_tb); no external database or CSV files required.
+  - Filters to U-Th dates only (date_type contains 'U/Th').
+  - Ratio-type sanity checks per entity:
+      * 234U/238U activity ratio <= 0 or > 10 → d234U likely submitted
+        instead of the activity ratio
+      * ini_230Th/232Th mean < 0.01 → atomic ratio submitted instead of
+        activity ratio
+      * 230Th/232Th mean < 0.1 → atomic ratio submitted instead of
+        activity ratio
+  - Independently recalculates uncorrected U-Th ages via 3 pathways
+    (depending on data availability) and detrital-corrected ages via 5
+    pathways. Pathways match those in the original Julia script.
+  - Age solver: scipy.optimize.brentq (replaces bisection loop; same
+    tolerance of 0.01 a; Brent's method is strictly more robust).
+  - Uncertainty: Monte Carlo, 5000 draws, 2σ (same as Julia original).
+  - Decay constants: Cheng et al. 2013 (default), Cheng et al. 2000,
+    Edwards et al. 1987 — values identical to original.
+  - Flags if recalculated uncorr_age deviates > 1% from reported value.
+  - Flags if recalculated corr_age deviates > 5% from reported value.
+  - New dependency: scipy (scipy.optimize.brentq). Add to pip install.
+  - Old sections 9 and 10 renumbered to 10 and 11.
+
+BUGFIX: check_notminmax_age() crash on non-numeric age values
+  - When uncorr_age or corr_age contained strings (already flagged by
+    check_numbers), the comparison in check_notminmax_age() raised a
+    TypeError. Fixed by coercing the age column to numeric with
+    pd.to_numeric(errors='coerce') and skipping NaN rows.
+
+TESTED:
+  - Glass La Vallina (5 U-Th dates): 0 warnings; uncorr deviation 0.00%,
+    corr deviation 0.41%. Correctly caught ini_230Th/232Th atomic ratio
+    error (4.4e-6 instead of activity ratio ~0.818) before fix.
+  - OBIR / C. Honiat (5 entities, ~60 U-Th dates): all U-Th checks pass,
+    corrected age deviations ≤ 0.07%. 61 structural warnings (not related
+    to U-Th section).
+
+----------------------------------------------------------------------
 
 2026-04-07 (E. Pestalozzi, L. Endres — merge of wb_check_v12_compatible.py and wb_check_istvan.py)
 ---------------------------------------------------------------------------------------------------
