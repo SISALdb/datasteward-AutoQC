@@ -1,5 +1,10 @@
 # datasteward-AutoQC
 
+🛑 
+!!! This is a legacy repo to develop the W15 script. The latest version of the Auto-QC is maintained in this repo: https://github.com/SISALdb/SISAL_WebSubmit.git
+!!!
+🛑
+
 Pre-upload quality control scripts for SISAL v15 workbooks submitted to the SISAL-Neotoma database.
 
 ## What this repo contains
